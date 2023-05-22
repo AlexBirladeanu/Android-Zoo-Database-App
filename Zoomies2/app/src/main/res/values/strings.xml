@@ -1,3 +1,37 @@
 <resources>
-    <string name="app_name">Zoomies</string>
+    <string name="app_name" translatable="false">Zoomies</string>
+    <string name="new_animal">New Animal</string>
+    <string name="name">Name</string>
+    <string name="species">Species</string>
+    <string name="habitat">Habitat</string>
+    <string name="diet">Diet</string>
+    <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
+    <string name="delete">Delete</string>
+    <string name="update">Update</string>
+    <string name="animals">Animals</string>
+    <string name="filters">Filters</string>
+    <string name="export">Export</string>
+    <string name="export_list">Export list to file</string>
+    <string name="ok">OK</string>
+    <string name="filename">File name</string>
+    <string name="filetype">File type</string>
+    <string name="find_by_name">Find by name</string>
+    <string name="sort_by">Sort by</string>
+    <string name="users">Users</string>
+    <string name="sign_in">Sign in</string>
+    <string name="username">User name</string>
+    <string name="password">Password</string>
+    <string name="submit">Submit</string>
+    <string name="invalid_input">Invalid Input!</string>
+    <string name="login">Log In</string>
+    <string name="hello">Hello</string>
+    <string name="new_user">New User</string>
+    <string name="email">Email</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="notify">Notify users via</string>
+    <string name="donut">Donut</string>
+    <string name="bars">Bars</string>
+    <string name="chart_shape">Chart shape</string>
+    <string name="chart_for">Chart for</string>
 </resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Zoomies</string>
+    <string name="new_animal">Animal Nou</string>
+    <string name="name">Nume</string>
+    <string name="species">Specie</string>
+    <string name="habitat">Habitat</string>
+    <string name="diet">Dietă</string>
+    <string name="cancel">Anulează</string>
+    <string name="create">Creează</string>
+    <string name="delete">Șterge</string>
+    <string name="update">Modifică</string>
+    <string name="animals">Animale</string>
+    <string name="filters">Filtre</string>
+    <string name="export">Exportă</string>
+    <string name="export_list">Exportă lista către fișier</string>
+    <string name="ok">OK</string>
+    <string name="filename">Numele fișierului</string>
+    <string name="filetype">Tipul fișierului</string>
+    <string name="find_by_name">Caută după nume</string>
+    <string name="sort_by">Sortează după</string>
+    <string name="users">Utilizatori</string>
+    <string name="sign_in">Autentifică-te</string>
+    <string name="username">Nume utilizator</string>
+    <string name="password">Parolă</string>
+    <string name="submit">Trimite</string>
+    <string name="invalid_input">Nume sau parolă greșite!</string>
+    <string name="login">Intră în cont</string>
+    <string name="hello">Salut</string>
+    <string name="new_user">Utilizator nou</string>
+    <string name="email">Email</string>
+    <string name="phone_number">Număr de telefon</string>
+    <string name="notify">Notifică utilizatorii prin</string>
+    <string name="donut">Circulară</string>
+    <string name="bars">Coloane</string>
+    <string name="chart_shape">Forma graficului</string>
+    <string name="chart_for">Grafic pentru</string>
+</resources>

@@ -78,4 +78,17 @@ dependencies {
     implementation "androidx.room:room-ktx:2.5.0"
     androidTestImplementation "androidx.room:room-testing:2.5.0"
 
+    //permission handling
+    implementation "com.google.accompanist:accompanist-permissions:0.21.1-beta"
+
+    //gson for json file creation
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+
+    testImplementation 'androidx.arch.core:core-testing:2.1.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_ui_version"
+    debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
+    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 }
