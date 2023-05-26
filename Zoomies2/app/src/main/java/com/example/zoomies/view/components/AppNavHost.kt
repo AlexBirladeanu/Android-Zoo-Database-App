@@ -9,7 +9,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.zoomies.SplashScreenView
 import com.example.zoomies.model.Route
-import com.example.zoomies.model.database.AppDatabase
 import com.example.zoomies.model.observer.LanguageEventHandler
 import com.example.zoomies.view_model.AnimalsViewModel
 import com.example.zoomies.view_model.LoginViewModel
@@ -18,7 +17,6 @@ import com.example.zoomies.view_model.UsersViewModel
 @RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun AppNavHost(
-    database: AppDatabase,
     navHostController: NavHostController = rememberNavController()
 ) {
 
@@ -45,7 +43,7 @@ fun AppNavHost(
                 navigateToLogin = {
                     navHostController.navigate(Route.LOGIN.toString())
                 },
-                viewModel = UsersViewModel(languageEventHandler, database, refreshPage = {
+                viewModel = UsersViewModel(languageEventHandler, refreshPage = {
                     navHostController.navigate(Route.USERS.toString())
                 })
             )
@@ -58,7 +56,7 @@ fun AppNavHost(
                 navigateToLogin = {
                     navHostController.navigate(Route.LOGIN.toString())
                 },
-                viewModel = UsersViewModel(languageEventHandler, database)
+                viewModel = UsersViewModel(languageEventHandler)
             )
         }
         composable(Route.USER_DETAILS.toString()) {
@@ -69,7 +67,7 @@ fun AppNavHost(
                 navigateToLogin = {
                     navHostController.navigate(Route.LOGIN.toString())
                 },
-                viewModel = UsersViewModel(languageEventHandler, database)
+                viewModel = UsersViewModel(languageEventHandler)
             )
         }
         composable(Route.ANIMALS.toString()) {
@@ -89,7 +87,7 @@ fun AppNavHost(
                 navigateToFilters = {
                     navHostController.navigate(Route.FILTERS.toString())
                 },
-                viewModel = AnimalsViewModel(languageEventHandler, database, refreshPage = {
+                viewModel = AnimalsViewModel(languageEventHandler, refreshPage = {
                     navHostController.navigate(Route.ANIMALS.toString())
                 })
             )
@@ -102,7 +100,7 @@ fun AppNavHost(
                 navigateToLogin = {
                     navHostController.navigate(Route.LOGIN.toString())
                 },
-                viewModel = AnimalsViewModel(languageEventHandler, database)
+                viewModel = AnimalsViewModel(languageEventHandler)
             )
         }
         composable(Route.ANIMAL_CREATION.toString()) {
@@ -113,7 +111,7 @@ fun AppNavHost(
                 navigateToLogin = {
                     navHostController.navigate(Route.LOGIN.toString())
                 },
-                viewModel = AnimalsViewModel(languageEventHandler, database)
+                viewModel = AnimalsViewModel(languageEventHandler)
             )
         }
         composable(Route.LOGIN.toString()) {
@@ -121,7 +119,7 @@ fun AppNavHost(
                 onScreenClose = {
                     navHostController.navigate(Route.ANIMALS.toString())
                 },
-                viewModel = LoginViewModel(database)
+                viewModel = LoginViewModel()
             )
         }
         composable(Route.FILTERS.toString()) {
@@ -129,7 +127,7 @@ fun AppNavHost(
                 onScreenClose = {
                     navHostController.navigateUp()
                 },
-                viewModel = AnimalsViewModel(languageEventHandler, database)
+                viewModel = AnimalsViewModel(languageEventHandler)
             )
         }
     }

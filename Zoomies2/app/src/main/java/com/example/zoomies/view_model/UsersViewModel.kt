@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.zoomies.MainActivity
 import com.example.zoomies.model.AppSettingsProvider
-import com.example.zoomies.model.database.AppDatabase
-import com.example.zoomies.model.database.entity.User
-import com.example.zoomies.model.database.entity.UserRole
+import com.example.zoomies.model.dto.UserDTO
+import com.example.zoomies.model.dto.UserRole
+import com.example.zoomies.model.dto.factory.UserDTOFactory
 import com.example.zoomies.model.observer.LanguageEventHandler
 import com.example.zoomies.model.observer.Observer
 import kotlinx.coroutines.Dispatchers
@@ -19,15 +19,13 @@ import kotlinx.coroutines.withContext
 
 class UsersViewModel(
     val languageEventHandler: LanguageEventHandler,
-    db: AppDatabase,
     private val refreshPage: () -> Unit = {}
 ) : ViewModel(),
     Observer {
 
-    private val database: AppDatabase
 
     private val userListLock = Any()
-    private val _userList: MutableStateFlow<List<User>> = MutableStateFlow(listOf())
+    private val _userList: MutableStateFlow<List<UserDTO>> = MutableStateFlow(listOf())
     val userList = _userList.asStateFlow()
 
     private val _isEmailNotification: MutableStateFlow<Boolean> = MutableStateFlow(
@@ -38,14 +36,10 @@ class UsersViewModel(
     init {
         languageEventHandler.attach(this)
 
-        database = db
-        resetList()
-    }
-
-    private suspend fun getAll(): List<User>? =
-        withContext(Dispatchers.IO) {
-            return@withContext database.userDao().getAll()
+        MainActivity.serverRequestFinished.observeForever {
+            resetList()
         }
+    }
 
     fun insert(
         id: Int? = null,
@@ -56,7 +50,7 @@ class UsersViewModel(
         phoneNumber: String,
         context: Context
     ) {
-        val user = User(
+        val user = UserDTOFactory.instance.createDTO(
             uid = id,
             userName = username,
             password = password,
@@ -64,25 +58,20 @@ class UsersViewModel(
             email = email,
             phoneNumber = phoneNumber
         )
-        Log.w("Reparatii", user.toString())
-        addToComposableView(user)
-        viewModelScope.launch(Dispatchers.IO) {
-            database.userDao().insert(user)
-        }
+        (context as MainActivity).requestInsertUser(user)
+
         val message = "Your new account credentials are:\n" +
                 "username: $username \n password: $password \n phoneNumber: $phoneNumber"
         if (_isEmailNotification.value) {
-            (context as MainActivity).sendEmail(email, message)
+            context.sendEmail(email, message)
         } else {
-            (context as MainActivity).sendSMS(phoneNumber, message)
+            context.sendSMS(phoneNumber, message)
         }
     }
 
-    fun delete(user: User, context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            database.userDao().delete(user)
-            resetList()
-        }
+    fun delete(user: UserDTO, context: Context) {
+        (context as MainActivity).requestDeleteUser(user)
+
         val message = "Your account has been removed!"
         if (_isEmailNotification.value) {
             (context as MainActivity).sendEmail(user.email, message)
@@ -91,19 +80,9 @@ class UsersViewModel(
         }
     }
 
-    private fun addToComposableView(user: User) {
-        synchronized(userListLock) {
-            _userList.value += user
-            _userList.value = _userList.value.sortedBy { it.uid }
-        }
-    }
-
     private fun resetList() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _userList.value = listOf()
-            getAll()?.forEach {
-                addToComposableView(it)
-            }
+        MainActivity.users?.let {
+            _userList.value = it
         }
     }
 
@@ -113,7 +92,7 @@ class UsersViewModel(
     }
 
     companion object {
-        var selectedUser: User? = null
+        var selectedUser: UserDTO? = null
     }
 
     override fun onLanguageChanged() {

@@ -8,10 +8,12 @@ import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.zoomies.MainActivity
 import com.example.zoomies.model.FileType
 import com.example.zoomies.model.Filter
-import com.example.zoomies.model.database.AppDatabase
-import com.example.zoomies.model.database.entity.Animal
+import com.example.zoomies.model.dto.AnimalDTO
+import com.example.zoomies.model.dto.factory.AnimalDTOFactory
+import com.example.zoomies.model.exportUtils.*
 import com.example.zoomies.model.observer.LanguageEventHandler
 import com.example.zoomies.model.observer.Observer
 import com.google.gson.Gson
@@ -20,7 +22,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.xmlpull.v1.XmlSerializer
 import java.io.File
 import java.io.FileOutputStream
@@ -29,16 +30,15 @@ import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.collections.HashMap
 
-class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, appDatabase: AppDatabase, private val refreshPage: () -> Unit = {}) : ViewModel(),
+class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, private val refreshPage: () -> Unit = {}) : ViewModel(),
     Observer {
 
-    private val database: AppDatabase
 
     private val animalListLock = Any()
-    private val _animalList: MutableStateFlow<List<Animal>> = MutableStateFlow(listOf())
+    private val _animalList: MutableStateFlow<List<AnimalDTO>> = MutableStateFlow(listOf())
     val animalList = _animalList.asStateFlow()
 
-    val searchResultsProcessed: MutableSharedFlow<List<Animal>> = MutableSharedFlow(replay = 0)
+    val searchResultsProcessed: MutableSharedFlow<List<AnimalDTO>> = MutableSharedFlow(replay = 0)
 
     private val _filtersList: MutableStateFlow<List<Filter>> = MutableStateFlow(listOf())
     val filterList = _filtersList.asStateFlow()
@@ -55,83 +55,48 @@ class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, appDataba
     init {
         languageEventHandler.attach(this)
 
-        database = appDatabase
         getFilterOptions()
 
         chartContentChanged.observeForever {
             getChartData()
         }
-
-        resetList()
+        MainActivity.serverRequestFinished.observeForever {
+            resetList()
+        }
     }
 
     override fun onLanguageChanged() {
         refreshPage()
     }
 
-    private suspend fun getAll(): List<Animal>? = withContext(Dispatchers.IO) {
-        return@withContext database.animalDao().getAll()
-    }
-
-    private suspend fun findByName(name: String): List<Animal>? = withContext(Dispatchers.IO) {
-        return@withContext database.animalDao().findByName(name)
-    }
-
-
-    fun insert(id: Int? = null, name: String, species: String, habitat: String, diet: String) {
-        val animal = Animal(
+    fun insert(id: Int? = null, name: String, species: String, habitat: String, diet: String, context: Context) {
+        val animal = AnimalDTOFactory.instance.createDTO(
             animalId = id, name = name, species = species, habitat = habitat, diet = diet
         )
-        addToComposableView(animal)
-        viewModelScope.launch(Dispatchers.IO) {
-            database.animalDao().insert(animal)
-            previousFilters = null
-            getFilterOptions()
-        }
+        (context as MainActivity).requestInsertAnimal(animal)
     }
 
-    fun delete(animal: Animal) {
-        viewModelScope.launch(Dispatchers.IO) {
-            database.animalDao().delete(animal)
-            resetList()
-        }
-
-    }
-
-    private fun addToComposableView(animal: Animal) {
-        synchronized(animalListLock) {
-            val species = _filtersList.value.filter { it.isSelected }.filter { it.category == "Species" }.map { it.name }
-            val habitats = _filtersList.value.filter { it.isSelected }.filter { it.category == "Habitats" }.map { it.name }
-            val diets = _filtersList.value.filter { it.isSelected }.filter { it.category == "Diets" }.map { it.name }
-            val isItemValid = species.contains(animal.species) && habitats.contains(animal.habitat) && diets.contains(animal.diet)
-            if (isItemValid || true) {
-                _animalList.value += animal
-                _animalList.value = _animalList.value.sortedBy { it.name }
-            }
-        }
+    fun delete(animal: AnimalDTO, context: Context) {
+        (context as MainActivity).requestDeleteAnimal(animal)
     }
 
     fun performSearch(name: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _animalList.value = listOf()
-            val searchResults: MutableList<Animal> = mutableListOf()
-            getAll()?.forEach {
-                searchResults.add(it)
+            MainActivity.animals?.let { list ->
+                _animalList.value = list.filter { it.name.contains(name) }
+                getChartData()
+                searchResultsProcessed.emit(_animalList.value)
             }
-            _animalList.value = searchResults.filter { it.name.contains(name) }
-            getChartData()
-            searchResultsProcessed.emit(_animalList.value)
         }
     }
 
     fun resetList() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _animalList.value = listOf()
-            getAll()?.forEach {
-                addToComposableView(it)
+        MainActivity.animals?.let {
+            _animalList.value = it
+            viewModelScope.launch(Dispatchers.IO) {
+                searchResultsProcessed.emit(_animalList.value)
             }
-            getChartData()
-            searchResultsProcessed.emit(_animalList.value)
         }
     }
 
@@ -152,7 +117,7 @@ class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, appDataba
             _filtersList.value = previousFilters!!
         } else {
             viewModelScope.launch(Dispatchers.IO) {
-                getAll()?.forEach {
+                MainActivity.animals?.forEach {
                     _filtersList.value += Filter("Species", it.species, true)
                     _filtersList.value += Filter("Habitats", it.habitat, true)
                     _filtersList.value += Filter("Diets", it.diet, true)
@@ -169,91 +134,28 @@ class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, appDataba
         )
     }
 
-    fun setAnimalList(newList: List<Animal>) {
+    fun setAnimalList(newList: List<AnimalDTO>) {
         _animalList.value = newList
     }
 
     fun exportFile(filename: String, fileType: FileType, context: Context) {
-        val docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-
-        val fileContent: List<Animal> = _animalList.value
-
-        val file: File
+        val fileContent: List<AnimalDTO> = _animalList.value
         when (fileType) {
             FileType.CSV -> {
-                file = File(docsDir, "$filename.csv")
-                try {
-                    val outputStream = FileOutputStream(file)
-                    val writer = outputStream.bufferedWriter()
-                    writer.write(""""ID", "Name", "Species", "Habitat", "Diet"""")
-                    writer.newLine()
-                    fileContent.forEach {
-                        writer.write("${it.animalId}, ${it.name}, ${it.species}, ${it.habitat},\"${it.diet}\"")
-                        writer.newLine()
-                    }
-                    writer.flush()
-                    Toast.makeText(context, "File saved", Toast.LENGTH_LONG).show()
-                } catch (e: IOException) {
-                    Toast.makeText(context, "Cannot save file", Toast.LENGTH_LONG).show()
-                    e.printStackTrace()
-                }
+                val fileExporter = FileExporter(CsvExportStrategy())
+                fileExporter.exportFile(filename, FileType.CSV, context, fileContent)
             }
             FileType.JSON -> {
-                file = File(docsDir, "$filename.json")
-                try {
-                    val gson = Gson()
-                    val outputStream = FileOutputStream(file)
-                    val writer = OutputStreamWriter(outputStream)
-                    gson.toJson(fileContent, writer)
-                    writer.flush()
-                    writer.close()
-                    Toast.makeText(context, "File saved", Toast.LENGTH_LONG).show()
-                } catch (e: IOException) {
-                    Toast.makeText(context, "Cannot save file", Toast.LENGTH_LONG).show()
-                    e.printStackTrace()
-                }
+                val fileExporter = FileExporter(JsonExportStrategy())
+                fileExporter.exportFile(filename, FileType.JSON, context, fileContent)
             }
             FileType.XML -> {
-                file = File(docsDir, "$filename.xml")
-                try {
-                    val serializer: XmlSerializer = Xml.newSerializer()
-                    val outputStream = FileOutputStream(file)
-                    serializer.setOutput(outputStream, "UTF-8")
-                    serializer.startDocument(null, true)
-                    serializer.startTag(null, "Animals")
-
-                    fileContent.forEach { animal ->
-                        serializer.startTag(null, "Animal")
-                        serializer.attribute(null, "id", animal.animalId.toString())
-                        serializer.attribute(null, "name", animal.name)
-                        serializer.attribute(null, "species", animal.species)
-                        serializer.attribute(null, "habitat", animal.habitat)
-                        serializer.attribute(null, "diet", animal.diet)
-                        serializer.endTag(null, "Animal")
-                    }
-
-                    serializer.endTag(null, "Animals")
-                    serializer.endDocument()
-                    outputStream.flush()
-                    outputStream.close()
-
-                    Toast.makeText(context, "File saved", Toast.LENGTH_LONG).show()
-                } catch (e: IOException) {
-                    Toast.makeText(context, "Cannot save file", Toast.LENGTH_LONG).show()
-                    e.printStackTrace()
-                }
+                val fileExporter = FileExporter(XmlExportStrategy())
+                fileExporter.exportFile(filename, FileType.XML, context, fileContent)
             }
             FileType.TXT -> {
-                file = File(docsDir, "$filename.txt")
-                try {
-                    val outputStream = FileOutputStream(file)
-                    outputStream.write(fileContent.toString().encodeToByteArray())
-                    outputStream.close()
-                    Toast.makeText(context, "File saved", Toast.LENGTH_LONG).show()
-                }catch (e: IOException) {
-                    Toast.makeText(context, "Cannot save file", Toast.LENGTH_LONG).show()
-                    e.printStackTrace()
-                }
+                val fileExporter = FileExporter(TxtExportStrategy())
+                fileExporter.exportFile(filename, FileType.TXT, context, fileContent)
             }
         }
     }
@@ -327,10 +229,11 @@ class AnimalsViewModel(val languageEventHandler: LanguageEventHandler, appDataba
     }
 
     companion object {
-        var selectedAnimal: Animal? = null
+        var selectedAnimal: AnimalDTO? = null
 
         var previousFilters: List<Filter>? = null
 
         var chartContentChanged = MutableLiveData<Unit>()
+
     }
 }

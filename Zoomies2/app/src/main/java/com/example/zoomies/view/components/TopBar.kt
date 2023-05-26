@@ -3,17 +3,15 @@ package com.example.zoomies.view.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,9 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.zoomies.MainActivity
 import com.example.zoomies.R
 import com.example.zoomies.model.observer.LanguageEventHandler
 import com.example.zoomies.view_model.LoginViewModel
@@ -48,7 +49,9 @@ fun TopBar(
             if (isHomeScreen) {
                 var showDropdown by remember { mutableStateOf(false) }
                 LanguageDropdown(
-                    modifier = Modifier.clickable { showDropdown = true }.padding(start = 8.dp),
+                    modifier = Modifier
+                        .clickable { showDropdown = true }
+                        .padding(start = 8.dp),
                     showDropdown = showDropdown,
                     onHideDropdown = { showDropdown = false },
                     onClick = {
@@ -90,6 +93,61 @@ fun TopBar(
                         contentDescription = null
                     )
                 }
+            }
+            var showServerDialog by remember { mutableStateOf(false) }
+            IconButton(onClick = { showServerDialog = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = null
+                )
+            }
+            if (showServerDialog) {
+                val activity = LocalContext.current as MainActivity
+                var ip by remember {
+                    mutableStateOf(MainActivity.SERVER_IP.toString())
+                }
+                var port by remember {
+                    mutableStateOf(MainActivity.SERVER_PORT.toString())
+                }
+                AlertDialog(
+                    title = {
+                        Text(text = "Connect to Zoomies Server", fontSize = 18.sp)
+                    },
+                    text = {
+                        Column() {
+                            TextField(
+                                value = ip,
+                                label = {
+                                    Text(text = "IP Address")
+                                },
+                                onValueChange = {
+                                    ip = it
+                                }
+                            )
+                            TextField(
+                                value = port,
+                                label = {
+                                    Text(text = "Port")
+                                },
+                                onValueChange = {
+                                    port = it
+                                }
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    onDismissRequest = { showServerDialog = false },
+                    confirmButton = {
+                        OutlinedButton(
+                            modifier = Modifier.padding(top = 16.dp, bottom = 12.dp, end = 16.dp),
+                            onClick = {
+                                activity.attemptConnectionToServer(ip, port.toInt())
+                                showServerDialog = false
+                            }) {
+                            Text(text = "Yes")
+                        }
+                    }
+                )
             }
         }
     )

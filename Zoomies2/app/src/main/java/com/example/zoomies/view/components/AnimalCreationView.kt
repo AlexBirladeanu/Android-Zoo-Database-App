@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.zoomies.R
@@ -30,6 +31,7 @@ fun AnimalCreationView(
     navigateToLogin: () -> Unit,
     viewModel: AnimalsViewModel
 ) {
+    val context = LocalContext.current
     BackHandler(onBack = onScreenClose)
     Scaffold(
         topBar = {
@@ -108,7 +110,8 @@ fun AnimalCreationView(
                                     name = name.value,
                                     species = species.value,
                                     habitat = habitat.value,
-                                    diet = diet.value
+                                    diet = diet.value,
+                                    context = context
                                 )
                                 onScreenClose()
                             }

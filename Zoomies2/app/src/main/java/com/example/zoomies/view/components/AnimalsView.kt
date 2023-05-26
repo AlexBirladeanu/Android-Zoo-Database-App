@@ -60,12 +60,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.zoomies.MainActivity
 import com.example.zoomies.R
-import com.example.zoomies.model.database.entity.Animal
-import com.example.zoomies.model.database.entity.UserRole
 import com.example.zoomies.view.components.charts.BarChart
 import com.example.zoomies.view.components.charts.DonutChart
 import com.example.zoomies.view_model.AnimalsViewModel
 import com.example.zoomies.model.FileType
+import com.example.zoomies.model.dto.AnimalDTO
+import com.example.zoomies.model.dto.UserRole
 import com.example.zoomies.view_model.LoginViewModel
 import kotlinx.coroutines.launch
 
@@ -383,7 +383,7 @@ private fun AnimalCreationOption(
 
 @Composable
 private fun AnimalCard(
-    animal: Animal,
+    animal: AnimalDTO,
     navigateToAnimalDetails: () -> Unit,
 ) {
     Card(elevation = 4.dp,
@@ -439,7 +439,7 @@ private fun AnimalCard(
 
 @Composable
 private fun SearchBar(
-    viewModel: AnimalsViewModel, items: List<Animal>, onUpdate: (List<Animal>) -> Unit
+    viewModel: AnimalsViewModel, items: List<AnimalDTO>, onUpdate: (List<AnimalDTO>) -> Unit
 ) {
     val newItems = items
     val focusManager = LocalFocusManager.current
@@ -499,7 +499,7 @@ fun SortingOptions(
     showSortingDropdown: Boolean,
     onHideSortingDropdown: () -> Unit,
     viewModel: AnimalsViewModel,
-    items: List<Animal>
+    items: List<AnimalDTO>
 ) {
 
     Text(

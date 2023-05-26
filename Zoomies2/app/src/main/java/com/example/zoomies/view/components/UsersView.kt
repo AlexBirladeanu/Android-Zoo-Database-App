@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.zoomies.MainActivity
 import com.example.zoomies.R
-import com.example.zoomies.model.database.entity.User
+import com.example.zoomies.model.dto.UserDTO
 import com.example.zoomies.view_model.UsersViewModel
 
 @Composable
@@ -36,6 +36,7 @@ fun UsersView(
     viewModel: UsersViewModel
 ) {
     val activity = LocalContext.current as MainActivity
+    val users by viewModel.userList.collectAsState()
     Scaffold(
         topBar = {
             TopBar(
@@ -103,7 +104,7 @@ fun UsersView(
                         )
                     }
 
-                    viewModel.userList.value.forEach{
+                    users.forEach{
                         UserCard(it, navigateToUserDetails)
                     }
                 }
@@ -114,7 +115,7 @@ fun UsersView(
 
 @Composable
 fun UserCard(
-    user: User,
+    user: UserDTO,
     navigateToUserDetails: () -> Unit
 ) {
 

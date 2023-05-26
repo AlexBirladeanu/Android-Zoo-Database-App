@@ -19,10 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.zoomies.R
-import com.example.zoomies.model.database.entity.UserRole
+import com.example.zoomies.model.dto.UserRole
 import com.example.zoomies.view_model.AnimalsViewModel
 import com.example.zoomies.view_model.LoginViewModel
 
@@ -33,7 +34,7 @@ fun AnimalDetailsView(
     viewModel: AnimalsViewModel
 ) {
     val animal = AnimalsViewModel.selectedAnimal!!
-
+    val context = LocalContext.current
     BackHandler(onBack = onScreenClose)
     Scaffold(
         topBar = {
@@ -109,7 +110,7 @@ fun AnimalDetailsView(
                                 text = stringResource(id = R.string.delete),
                                 color = MaterialTheme.colors.onSecondary,
                                 modifier = Modifier.clickable {
-                                    viewModel.delete(animal)
+                                    viewModel.delete(animal, context)
                                     onScreenClose()
                                 }
                             )
@@ -122,7 +123,8 @@ fun AnimalDetailsView(
                                         name.value,
                                         species.value,
                                         habitat.value,
-                                        diet.value
+                                        diet.value,
+                                        context
                                     )
                                     onScreenClose()
                                 }
